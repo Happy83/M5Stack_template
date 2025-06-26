@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M5Stack Widget Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 1px solid #404040;
+        }
+
+        h1 {
+            text-align: center;
+            color: #e0e0e0;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            min-height: 600px;
+        }
+
+        .left-panel {
+            width: 300px;
+            background: #333333;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #404040;
+        }
+
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #404040;
+            border: 2px solid #555555;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .canvas {
+            position: relative;
+            background: #000;
+            cursor: crosshair;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .widget {
+            position: absolute;
+            border: 2px solid #6b7280;
+            border-radius: 8px;
+            cursor: move;
+            user-select: none;
+            background: rgba(55, 65, 81, 0.9);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .widget:hover {
+            border-color: #9ca3af;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        .widget.selected {
+            border-color: #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .widget-controls {
+            position: absolute;
+            top: -25px;
+            right: 0;
+            display: none;
+            gap: 5px;
+        }
+
+        .widget.selected .widget-controls {
+            display: flex;
+        }
+
+        .control-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #404040;
+            border-radius: 10px;
+            border: 1px solid #555555;
+        }
+
+        .settings-section h3 {
+            margin-bottom: 15px;
+            color: #e0e0e0;
+            font-size: 1.2em;
+            border-bottom: 2px solid #6b7280;
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #d1d5db;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #555555;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+            background: #2d2d2d;
+            color: #e0e0e0;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #6b7280;
+        }
+
+        .widget-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .widget-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            background: #6b7280;
+            color: white;
+        }
+
+        .widget-btn:hover {
+            transform: translateY(-2px);
+            background: #9ca3af;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .primary-btn {
+            background: #6b7280;
+            color: white;
+        }
+
+        .secondary-btn {
+            background: #4b5563;
+            color: white;
+        }
+
+        .success-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .danger-btn {
+            background: #dc2626;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            filter: brightness(1.1);
+        }
+
+        .code-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 2px solid #333;
+        }
+
+        .json-output {
+            background: #2d2d2d;
+            border: 2px solid #555555;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-top: 20px;
+            color: #e0e0e0;
+        }
+
+        .properties-panel {
+            background: #404040;
+            border-radius: 10px;
+            border: 1px solid #555555;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .coordinates {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 1px solid #555555;
+        }
+
+        /* Vodící linky */
+        .guide-line {
+            position: absolute;
+            background: #f59e0b;
+            pointer-events: none;
+            opacity: 0.6;
+            z-index: 1000;
+        }
+
+        .guide-line.horizontal {
+            height: 1px;
+            width: 100%;
+            left: 0;
+        }
+
+        .guide-line.vertical {
+            width: 1px;
+            height: 100%;
+            top: 0;
+        }
+
+        /* Multi-select styling */
+        .selection-box {
+            position: absolute;
+            border: 2px dashed #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .alignment-controls {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #4b5563;
+            border-radius: 8px;
+            border: 1px solid #6b7280;
+        }
+
+        .alignment-controls.show {
+            display: block;
+        }
+
+        .alignment-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .align-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            background: #6b7280;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .align-btn:hover {
+            background: #9ca3af;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .canvas.adding-widget {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ M5Stack Widget Generator</h1>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="settings-section">
+                    <h3>⚙️ Nastavení plochy</h3>
+                    <div class="form-group">
+                        <label>Šířka (px):</label>
+                        <input type="number" id="canvasWidth" value="320" min="100" max="800">
+                    </div>
+                    <div class="form-group">
+                        <label>Výška (px):</label>
+                        <input type="number" id="canvasHeight" value="240" min="100" max="600">
+                    </div>
+                    <div class="form-group">
+                        <label>Rotace obrazovky:</label>
+                        <select id="screenRotation">
+                            <option value="0">0° (Portrait)</option>
+                            <option value="1">90° (Landscape)</option>
+                            <option value="2">180° (Portrait obrácený)</option>
+                            <option value="3">270° (Landscape obrácený)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="showGuides" checked onchange="toggleGuides()">
+                            Zobrazit vodící linky
+                        </label>
+                    </div>
+                    <button class="action-btn primary-btn" onclick="updateCanvasSize()">Aktualizovat plochu</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🧩 Přidat widget</h3>
+                    <div class="widget-buttons">
+                        <button class="widget-btn" onclick="addWidget('label')">📝 Label</button>
+                        <button class="widget-btn" onclick="addWidget('image')">🖼️ Obrázek</button>
+                        <button class="widget-btn" onclick="addWidget('button')">🔘 Tlačítko</button>
+                        <button class="widget-btn" onclick="addWidget('rect')">⬜ Obdélník</button>
+                        <button class="widget-btn" onclick="addWidget('circle')">⭕ Kruh</button>
+                        <button class="widget-btn" onclick="addWidget('line')">📏 Čára</button>
+                    </div>
+                </div>
+
+                <div class="properties-panel" id="propertiesPanel" style="display: none;">
+                    <h3>🔧 Vlastnosti widgetu</h3>
+                    <div id="propertiesContent"></div>
+                    
+                    <div class="alignment-controls" id="alignmentControls">
+                        <h4 style="color: #e0e0e0; margin-bottom: 10px;">Zarovnání vybraných komponent:</h4>
+                        <div class="alignment-buttons">
+                            <button class="align-btn" onclick="alignWidgets('left')">⬅️ Vlevo</button>
+                            <button class="align-btn" onclick="alignWidgets('center-h')">↔️ Střed H</button>
+                            <button class="align-btn" onclick="alignWidgets('right')">➡️ Vpravo</button>
+                            <button class="align-btn" onclick="alignWidgets('top')">⬆️ Nahoře</button>
+                            <button class="align-btn" onclick="alignWidgets('center-v')">↕️ Střed V</button>
+                            <button class="align-btn" onclick="alignWidgets('bottom')">⬇️ Dole</button>
+                            <button class="align-btn" onclick="alignWidgets('distribute-h')">📏 Rozdělit H</button>
+                            <button class="align-btn" onclick="alignWidgets('distribute-v')">📐 Rozdělit V</button>
+                            <button class="align-btn" onclick="alignWidgets('same-size')">📐 Stejná velikost</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-area">
+                <div class="canvas-container">
+                    <div class="canvas" id="canvas"></div>
+                    <div class="coordinates" id="coordinates">0, 0</div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn primary-btn" onclick="generateCode()">🐍 Generovat Python kód</button>
+                    <button class="action-btn secondary-btn" onclick="exportJSON()">📄 Export JSON</button>
+                    <button class="action-btn success-btn" onclick="importJSON()">📥 Import JSON</button>
+                    <button class="action-btn danger-btn" onclick="clearCanvas()">🗑️ Vymazat vše</button>
+                </div>
+
+                <div id="output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let widgets = [];
+        let selectedWidgets = [];
+        let draggedWidget = null;
+        let dragOffset = { x: 0, y: 0 };
+        let addingWidget = null;
+        let widgetIdCounter = 1;
+        let isSelecting = false;
+        let selectionStart = { x: 0, y: 0 };
+        let selectionBox = null;
+        let showGuides = true;
+
+        const canvas = document.getElementById('canvas');
+        const coordinates = document.getElementById('coordinates');
+        const propertiesPanel = document.getElementById('propertiesPanel');
+        const propertiesContent = document.getElementById('propertiesContent');
+
+        // Inicializace
+        updateCanvasSize();
+
+        // Event listenery
+        canvas.addEventListener('mousemove', updateCoordinates);
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('keydown', handleKeyDown);
+
+        function updateCanvasSize() {
+            const width = document.getElementById('canvasWidth').value;
+            const height = document.getElementById('canvasHeight').value;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+
+        function updateCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+            coordinates.textContent = `${x}, ${y}`;
+        }
+
+        function addWidget(type) {
+            addingWidget = type;
+            canvas.classList.add('adding-widget');
+            canvas.style.cursor = 'crosshair';
+        }
+
+        function handleCanvasClick(e) {
+            if (addingWidget) {
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.round(e.clientX - rect.left);
+                const y = Math.round(e.clientY - rect.top);
+                
+                createWidget(addingWidget, x, y);
+                addingWidget = null;
+                canvas.classList.remove('adding-widget');
+                canvas.style.cursor = 'default';
+            } else if (!isSelecting) {
+                if (!e.ctrlKey && !e.metaKey) {
+                    selectWidgets(null);
+                }
+            }
+        }
+
+        function handleMouseDown(e) {
+            if (addingWidget || e.target.closest('.widget')) return;
+            
+            isSelecting = true;
+            const rect = canvas.getBoundingClientRect();
+            selectionStart.x = e.clientX - rect.left;
+            selectionStart.y = e.clientY - rect.top;
+            
+            createSelectionBox();
+        }
+
+        function handleMouseMove(e) {
+            if (isSelecting && selectionBox) {
+                const rect = canvas.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                updateSelectionBox(currentX, currentY);
+            }
+        }
+
+        function handleMouseUp(e) {
+            if (isSelecting) {
+                finishSelection();
+                isSelecting = false;
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Delete' && selectedWidgets.length > 0) {
+                selectedWidgets.forEach(widget => deleteWidget(widget.id));
+            }
+            if (e.key === 'Escape') {
+                selectWidgets(null);
+            }
+        }
+
+        function createSelectionBox() {
+            selectionBox = document.createElement('div');
+            selectionBox.className = 'selection-box';
+            selectionBox.style.left = selectionStart.x + 'px';
+            selectionBox.style.top = selectionStart.y + 'px';
+            selectionBox.style.width = '0px';
+            selectionBox.style.height = '0px';
+            canvas.appendChild(selectionBox);
+        }
+
+        function updateSelectionBox(currentX, currentY) {
+            const left = Math.min(selectionStart.x, currentX);
+            const top = Math.min(selectionStart.y, currentY);
+            const width = Math.abs(currentX - selectionStart.x);
+            const height = Math.abs(currentY - selectionStart.y);
+            
+            selectionBox.style.left = left + 'px';
+            selectionBox.style.top = top + 'px';
+            selectionBox.style.width = width + 'px';
+            selectionBox.style.height = height + 'px';
+        }
+
+        function finishSelection() {
+            if (!selectionBox) return;
+            
+            const boxRect = selectionBox.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const selectionBounds = {
+                left: boxRect.left - canvasRect.left,
+                top: boxRect.top - canvasRect.top,
+                right: boxRect.right - canvasRect.left,
+                bottom: boxRect.bottom - canvasRect.top
+            };
+            
+            const selectedInBox = widgets.filter(widget => {
+                return widget.x < selectionBounds.right &&
+                       widget.x + widget.width > selectionBounds.left &&
+                       widget.y < selectionBounds.bottom &&
+                       widget.y + widget.height > selectionBounds.top;
+            });
+            
+            if (selectedInBox.length > 0) {
+                selectWidgets(selectedInBox);
+            }
+            
+            canvas.removeChild(selectionBox);
+            selectionBox = null;
+        }
+
+        function toggleGuides() {
+            showGuides = document.getElementById('showGuides').checked;
+            document.querySelectorAll('.guide-line').forEach(line => {
+                line.style.display = showGuides ? 'block' : 'none';
+            });
+        }
+
+        function showGuideLines(widget) {
+            if (!showGuides) return;
+            
+            clearGuideLines();
+            
+            // Horizontální vodící linka
+            const hLine = document.createElement('div');
+            hLine.className = 'guide-line horizontal';
+            hLine.style.top = (widget.y + widget.height / 2) + 'px';
+            canvas.appendChild(hLine);
+            
+            // Vertikální vodící linka
+            const vLine = document.createElement('div');
+            vLine.className = 'guide-line vertical';
+            vLine.style.left = (widget.x + widget.width / 2) + 'px';
+            canvas.appendChild(vLine);
+        }
+
+        function clearGuideLines() {
+            document.querySelectorAll('.guide-line').forEach(line => {
+                line.remove();
+            });
+        }
+
+        function createWidget(type, x, y) {
+            const widget = {
+                id: widgetIdCounter++,
+                type: type,
+                x: x,
+                y: y,
+                width: getDefaultWidth(type),
+                height: getDefaultHeight(type),
+                properties: getDefaultProperties(type)
+            };
+
+            widgets.push(widget);
+            renderWidget(widget);
+        }
+
+        function getDefaultWidth(type) {
+            const defaults = {
+                'label': 100,
+                'image': 64,
+                'button': 80,
+                'rect': 60,
+                'circle': 40,
+                'line': 100
+            };
+            return defaults[type] || 60;
+        }
+
+        function getDefaultHeight(type) {
+            const defaults = {
+                'label': 20,
+                'image': 64,
+                'button': 30,
+                'rect': 40,
+                'circle': 40,
+                'line': 2
+            };
+            return defaults[type] || 20;
+        }
+
+        function getDefaultProperties(type) {
+            const defaults = {
+                'label': { text: 'Label', color: '0xFFFFFF', font: 'FONT_MONT_14' },
+                'image': { path: '/path/to/image.jpg' },
+                'button': { text: 'Button', callback: 'button_callback' },
+                'rect': { color: '0xFFFFFF', filled: true },
+                'circle': { color: '0xFFFFFF', filled: true },
+                'line': { color: '0xFFFFFF', thickness: 2 }
+            };
+            return defaults[type] || {};
+        }
+
+        function renderWidget(widget) {
+            const element = document.createElement('div');
+            element.className = 'widget';
+            element.id = 'widget_' + widget.id;
+            element.style.left = widget.x + 'px';
+            element.style.top = widget.y + 'px';
+            element.style.width = widget.width + 'px';
+            element.style.height = widget.height + 'px';
+
+            // Obsah widgetu
+            let content = '';
+            switch (widget.type) {
+                case 'label':
+                    content = `<span style="font-size: 12px; padding: 2px;">${widget.properties.text}</span>`;
+                    break;
+                case 'image':
+                    content = `<div style="background: #ddd; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px;">IMG</div>`;
+                    break;
+                case 'button':
+                    content = `<div style="background: #007bff; color: white; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; border-radius: 4px;">${widget.properties.text}</div>`;
+                    break;
+                case 'rect':
+                    content = `<div style="background: ${widget.properties.filled ? '#666' : 'transparent'}; border: ${widget.properties.filled ? 'none' : '2px solid #666'}; width: 100%; height: 100%;"></div>`;
+                    break;
+                case 'circle':
+                    content = `<div style="background: ${widget.properties.filled ? '#666' : 'transparent'}; border: ${widget.properties.filled ? 'none' : '2px solid #666'}; width: 100%; height: 100%; border-radius: 50%;"></div>`;
+                    break;
+                case 'line':
+                    content = `<div style="background: #666; width: 100%; height: ${widget.properties.thickness}px; margin-top: ${(widget.height - widget.properties.thickness) / 2}px;"></div>`;
+                    break;
+            }
+
+            element.innerHTML = `
+                ${content}
+                <div class="widget-controls">
+                    <button class="control-btn delete-btn" onclick="deleteWidget(${widget.id})">×</button>
+                </div>
+            `;
+
+            element.addEventListener('mousedown', (e) => startDrag(e, widget.id));
+            element.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectWidget(widget.id);
+            });
+
+            canvas.appendChild(element);
+        }
+
+        function selectWidget(widgetId) {
+            // Odebrat selected třídu ze všech widgetů
+            document.querySelectorAll('.widget').forEach(el => el.classList.remove('selected'));
+            
+            if (widgetId) {
+                const element = document.getElementById('widget_' + widgetId);
+                element.classList.add('selected');
+                selectedWidget = widgets.find(w => w.id === widgetId);
+                showProperties(selectedWidget);
+            } else {
+                selectedWidget = null;
+                hideProperties();
+            }
+        }
+
+        function showProperties(widget) {
+            propertiesPanel.style.display = 'block';
+            
+            let html = `
+                <div class="form-group">
+                    <label>X pozice:</label>
+                    <input type="number" value="${widget.x}" onchange="updateWidgetProperty(${widget.id}, 'x', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Y pozice:</label>
+                    <input type="number" value="${widget.y}" onchange="updateWidgetProperty(${widget.id}, 'y', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Šířka:</label>
+                    <input type="number" value="${widget.width}" onchange="updateWidgetProperty(${widget.id}, 'width', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Výška:</label>
+                    <input type="number" value="${widget.height}" onchange="updateWidgetProperty(${widget.id}, 'height', this.value)">
+                </div>
+            `;
+
+            // Specifické vlastnosti podle typu
+            Object.keys(widget.properties).forEach(prop => {
+                const value = widget.properties[prop];
+                if (typeof value === 'boolean') {
+                    html += `
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" ${value ? 'checked' : ''} onchange="updateWidgetProperty(${widget.id}, 'properties.${prop}', this.checked)">
+                                ${prop}
+                            </label>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="form-group">
+                            <label>${prop}:</label>
+                            <input type="text" value="${value}" onchange="updateWidgetProperty(${widget.id}, 'properties.${prop}', this.value)">
+                        </div>
+                    `;
+                }
+            });
+
+            propertiesContent.innerHTML = html;
+        }
+
+        function hideProperties() {
+            propertiesPanel.style.display = 'none';
+        }
+
+        function updateWidgetProperty(widgetId, property, value) {
+            const widget = widgets.find(w => w.id === widgetId);
+            if (!widget) return;
+
+            if (property.startsWith('properties.')) {
+                const prop = property.replace('properties.', '');
+                widget.properties[prop] = isNaN(value) ? value : Number(value);
+            } else {
+                widget[property] = Number(value);
+            }
+
+            // Přerenderovat widget
+            const element = document.getElementById('widget_' + widgetId);
+            element.remove();
+            renderWidget(widget);
+            selectWidget(widgetId);
+        }
+
+        function startDrag(e, widgetId) {
+            e.preventDefault();
+            draggedWidget = widgets.find(w => w.id === widgetId);
+            const element = document.getElementById('widget_' + widgetId);
+            const rect = element.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function drag(e) {
+            if (!draggedWidget) return;
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const newX = e.clientX - canvasRect.left - dragOffset.x;
+            const newY = e.clientY - canvasRect.top - dragOffset.y;
+
+            draggedWidget.x = Math.max(0, Math.min(newX, canvas.offsetWidth - draggedWidget.width));
+            draggedWidget.y = Math.max(0, Math.min(newY, canvas.offsetHeight - draggedWidget.height));
+
+            const element = document.getElementById('widget_' + draggedWidget.id);
+            element.style.left = draggedWidget.x + 'px';
+            element.style.top = draggedWidget.y + 'px';
+
+            if (selectedWidget && selectedWidget.id === draggedWidget.id) {
+                showProperties(selectedWidget);
+            }
+        }
+
+        function stopDrag() {
+            draggedWidget = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        function deleteWidget(widgetId) {
+            widgets = widgets.filter(w => w.id !== widgetId);
+            const element = document.getElementById('widget_' + widgetId);
+            element.remove();
+            
+            if (selectedWidget && selectedWidget.id === widgetId) {
+                selectWidget(null);
+            }
+        }
+
+        function clearCanvas() {
+            if (confirm('Opravdu chcete vymazat všechny widgety?')) {
+                widgets = [];
+                canvas.innerHTML = '<div class="coordinates" id="coordinates">0, 0</div>';
+                selectWidget(null);
+            }
+        }
+
+        function generateCode() {
+            const width = document.getElementById('canvasWidth').value;
+            const height = document.getElementById('canvasHeight').value;
+            
+            let code = `# M5Stack Widget Code - Generováno automaticky
+import os, sys, io
+import M5
+from M5 import *
+from hardware import *
+
+# Inicializace M5Stack
+M5.begin()
+Widgets.fillScreen(0x000000)
+
+# Nastavení displeje
+Widgets.setRotation(0)
+
+`;
+
+            widgets.forEach((widget, index) => {
+                code += generateWidgetCode(widget, index);
+            });
+
+            code += `
+# Hlavní smyčka
+while True:
+    M5.update()
+`;
+
+            showOutput('code', code);
+        }
+
+        function generateWidgetCode(widget, index) {
+            let code = `# Widget ${index + 1}: ${widget.type}\n`;
+            
+            switch (widget.type) {
+                case 'label':
+                    code += `label${index} = Widgets.Label("${widget.properties.text}", ${widget.x}, ${widget.y}, 1.0, ${widget.properties.color}, 0x000000, Widgets.${widget.properties.font})\n\n`;
+                    break;
+                case 'image':
+                    code += `# Načtení obrázku: ${widget.properties.path}\n`;
+                    code += `image${index} = Widgets.Image("${widget.properties.path}", ${widget.x}, ${widget.y})\n\n`;
+                    break;
+                case 'button':
+                    code += `def ${widget.properties.callback}():\n`;
+                    code += `    print("Button pressed!")\n`;
+                    code += `    pass\n\n`;
+                    code += `button${index} = Widgets.Button("${widget.properties.text}", ${widget.x}, ${widget.y}, ${widget.width}, ${widget.height}, False, ${widget.properties.callback})\n\n`;
+                    break;
+                case 'rect':
+                    if (widget.properties.filled) {
+                        code += `Widgets.fillRect(${widget.x}, ${widget.y}, ${widget.width}, ${widget.height}, ${widget.properties.color})\n\n`;
+                    } else {
+                        code += `Widgets.drawRect(${widget.x}, ${widget.y}, ${widget.width}, ${widget.height}, ${widget.properties.color})\n\n`;
+                    }
+                    break;
+                case 'circle':
+                    const radius = Math.min(widget.width, widget.height) / 2;
+                    const centerX = widget.x + widget.width / 2;
+                    const centerY = widget.y + widget.height / 2;
+                    if (widget.properties.filled) {
+                        code += `Widgets.fillCircle(${Math.round(centerX)}, ${Math.round(centerY)}, ${Math.round(radius)}, ${widget.properties.color})\n\n`;
+                    } else {
+                        code += `Widgets.drawCircle(${Math.round(centerX)}, ${Math.round(centerY)}, ${Math.round(radius)}, ${widget.properties.color})\n\n`;
+                    }
+                    break;
+                case 'line':
+                    code += `Widgets.drawLine(${widget.x}, ${widget.y + Math.round(widget.height/2)}, ${widget.x + widget.width}, ${widget.y + Math.round(widget.height/2)}, ${widget.properties.color})\n\n`;
+                    break;
+            }
+            
+            return code;
+        }
+
+        function exportJSON() {
+            const config = {
+                canvas: {
+                    width: parseInt(document.getElementById('canvasWidth').value),
+                    height: parseInt(document.getElementById('canvasHeight').value)
+                },
+                widgets: widgets,
+                version: "1.0",
+                generated: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(config, null, 2);
+            showOutput('json', json);
+        }
+
+        function importJSON() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const config = JSON.parse(e.target.result);
+                            loadConfiguration(config);
+                        } catch (error) {
+                            alert('Chyba při načítání JSON souboru: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function loadConfiguration(config) {
+            // Vymazat současné widgety
+            clearCanvas();
+            
+            // Nastavit rozměry plátna
+            if (config.canvas) {
+                document.getElementById('canvasWidth').value = config.canvas.width;
+                document.getElementById('canvasHeight').value = config.canvas.height;
+                updateCanvasSize();
+            }
+            
+            // Načíst widgety
+            if (config.widgets) {
+                widgets = config.widgets;
+                widgetIdCounter = Math.max(...widgets.map(w => w.id)) + 1;
+                
+                widgets.forEach(widget => {
+                    renderWidget(widget);
+                });
+            }
+        }
+
+        function showOutput(type, content) {
+            const output = document.getElementById('output');
+            const className = type === 'code' ? 'code-output' : 'json-output';
+            
+            output.innerHTML = `
+                <div class="${className}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${type === 'code' ? '🐍 MicroPython kód:' : '📄 JSON konfigurace:'}</strong>
+                        <button onclick="copyToClipboard(this.nextElementSibling)" style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">📋 Kopírovat</button>
+                    </div>
+                    <pre>${content}</pre>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(element) {
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Zkopírováno do schránky!');
+            });
+        }
+    </script>
+</body>
+</html>
